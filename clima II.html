@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-br">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Condições Climáticas - Weather Dashboard</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#25aff4",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101c22",
+                        "slate-custom": "#1a2a33",
+                        "slate-accent": "#283339"
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .active-icon { font-variation-settings: 'FILL' 1; }
+        input::-webkit-calendar-picker-indicator { display: none !important; }
+        
+        /* Oculta scrollbar no carrossel mobile mas permite o scroll */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col lg:flex-row">
+
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-custom/95 backdrop-blur-md border-t border-slate-accent z-50 flex justify-around items-center p-3 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
+        <a href="#" class="flex flex-col items-center gap-1 text-primary">
+            <span class="material-symbols-outlined active-icon">dashboard</span>
+            <span class="text-[10px] font-semibold">Início</span>
+        </a>
+        <a href="#" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors">
+            <span class="material-symbols-outlined">map</span>
+            <span class="text-[10px] font-medium">Mapas</span>
+        </a>
+        <a href="#" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors">
+            <span class="material-symbols-outlined">history</span>
+            <span class="text-[10px] font-medium">Histórico</span>
+        </a>
+        <a href="#" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors">
+            <span class="material-symbols-outlined">settings</span>
+            <span class="text-[10px] font-medium">Ajustes</span>
+        </a>
+    </nav>
+
+    <aside class="w-64 border-r border-slate-custom bg-background-light dark:bg-background-dark hidden lg:flex flex-col h-screen sticky top-0">
+        <div class="p-6 flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary text-3xl">wb_sunny</span>
+            <h1 class="text-xl font-bold tracking-tight">WeatherPro</h1>
+        </div>
+        <nav class="flex-1 px-4 space-y-2">
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary" href="#">
+                <span class="material-symbols-outlined active-icon">dashboard</span>
+                <span class="font-medium">Dashboard</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-accent/50 transition-colors" href="#">
+                <span class="material-symbols-outlined">map</span>
+                <span class="font-medium">Mapas</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-accent/50 transition-colors" href="#">
+                <span class="material-symbols-outlined">history</span>
+                <span class="font-medium">Histórico</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-accent/50 transition-colors" href="#">
+                <span class="material-symbols-outlined">settings</span>
+                <span class="font-medium">Configurações</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+        
+        <header class="border-b border-slate-custom bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center justify-between w-full md:w-auto hidden md:flex">
+                <h2 class="text-lg font-semibold">Condições Climáticas</h2>
+            </div>
+            
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <div class="relative w-full md:w-80 group">
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none">search</span>
+                    
+                    <input id="search-input" list="cidades-brasil" autocomplete="off" 
+                           class="bg-slate-custom/50 border border-slate-custom text-slate-100 placeholder-slate-400 rounded-xl pl-12 pr-4 py-2.5 w-full hover:border-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:bg-slate-custom transition-all shadow-sm text-sm md:text-base" 
+                           placeholder="Buscar cidade..." type="text"/>
+                    
+                    <datalist id="cidades-brasil">
+                        <option value="Paranatinga, MT, BR"></option>
+                        <option value="Aracaju, SE, BR"></option>
+                        <option value="Belém, PA, BR"></option>
+                        <option value="Belo Horizonte, MG, BR"></option>
+                        <option value="Boa Vista, RR, BR"></option>
+                        <option value="Brasília, DF, BR"></option>
+                        <option value="Campo Grande, MS, BR"></option>
+                        <option value="Cuiabá, MT, BR"></option>
+                        <option value="Curitiba, PR, BR"></option>
+                        <option value="Florianópolis, SC, BR"></option>
+                        <option value="Fortaleza, CE, BR"></option>
+                        <option value="Goiânia, GO, BR"></option>
+                        <option value="João Pessoa, PB, BR"></option>
+                        <option value="Macapá, AP, BR"></option>
+                        <option value="Maceió, AL, BR"></option>
+                        <option value="Manaus, AM, BR"></option>
+                        <option value="Natal, RN, BR"></option>
+                        <option value="Palmas, TO, BR"></option>
+                        <option value="Porto Alegre, RS, BR"></option>
+                        <option value="Porto Velho, RO, BR"></option>
+                        <option value="Recife, PE, BR"></option>
+                        <option value="Rio Branco, AC, BR"></option>
+                        <option value="Rio de Janeiro, RJ, BR"></option>
+                        <option value="Salvador, BA, BR"></option>
+                        <option value="São Luís, MA, BR"></option>
+                        <option value="São Paulo, SP, BR"></option>
+                        <option value="Teresina, PI, BR"></option>
+                        <option value="Vitória, ES, BR"></option>
+                    </datalist>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button class="p-2.5 rounded-xl bg-slate-custom/50 border border-slate-custom hover:border-slate-500 transition-colors text-slate-100"><span class="material-symbols-outlined text-[20px]">notifications</span></button>
+                    <button class="p-2.5 rounded-xl bg-slate-custom/50 border border-slate-custom hover:border-slate-500 transition-colors text-slate-100 hidden md:block"><span class="material-symbols-outlined text-[20px]">person</span></button>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-4 md:p-8 pb-24 md:pb-8 space-y-6 md:space-y-8">
+            
+            <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div class="xl:col-span-2 bg-gradient-to-br from-primary/20 to-transparent border border-primary/30 rounded-xl p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start justify-between relative overflow-hidden group text-center md:text-left">
+                    <div class="z-10 w-full flex flex-col items-center md:items-start">
+                        <div class="flex items-center justify-center md:justify-start gap-2 text-primary mb-2">
+                            <span class="material-symbols-outlined">location_on</span>
+                            <span id="city-name" class="font-medium">Carregando...</span>
+                        </div>
+                        <div class="flex items-end justify-center md:justify-start gap-2 mb-4">
+                            <h3 id="current-temp" class="text-6xl md:text-7xl font-bold">--°</h3>
+                            <span class="text-2xl text-slate-400 font-medium mb-2">C</span>
+                        </div>
+                        <div class="space-y-1 w-full">
+                            <p id="weather-desc" class="text-lg md:text-xl font-semibold capitalize">--</p>
+                            <p id="weather-details" class="text-slate-400 text-sm md:text-base">Sensação térmica de --° • Máx: --° Mín: --°</p>
+                        </div>
+                    </div>
+                    <div class="z-10 mt-6 md:mt-0">
+                        <span id="main-icon" class="material-symbols-outlined text-[100px] md:text-[120px] text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">light_mode</span>
+                    </div>
+                    <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all"></div>
+                </div>
+                
+                <div class="bg-slate-custom/50 border border-slate-custom rounded-xl p-6 flex flex-col">
+                    <h3 class="font-bold mb-4 flex items-center justify-center md:justify-start gap-2 text-sm md:text-base">
+                        <span class="material-symbols-outlined text-primary">timeline</span>
+                        Variação de Temperatura (24h)
+                    </h3>
+                    <div class="flex-1 w-full relative h-40 md:h-32">
+                        <canvas id="tempChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="text-lg md:text-xl font-bold mb-4 md:mb-6">Indicadores Climáticos</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4">
+                    <div class="bg-slate-custom/50 border border-slate-custom p-4 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
+                        <span class="material-symbols-outlined text-primary mb-2">airwave</span>
+                        <p class="text-slate-400 text-[10px] md:text-xs font-medium uppercase mb-1">Vento</p>
+                        <p id="wind-val" class="text-base md:text-lg font-bold">-- km/h</p>
+                    </div>
+                    <div class="bg-slate-custom/50 border border-slate-custom p-4 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
+                        <span class="material-symbols-outlined text-blue-400 mb-2">humidity_percentage</span>
+                        <p class="text-slate-400 text-[10px] md:text-xs font-medium uppercase mb-1">Umidade</p>
+                        <p id="humidity-val" class="text-base md:text-lg font-bold">--%</p>
+                    </div>
+                    <div class="bg-slate-custom/50 border border-slate-custom p-4 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
+                        <span class="material-symbols-outlined text-primary mb-2">visibility</span>
+                        <p class="text-slate-400 text-[10px] md:text-xs font-medium uppercase mb-1">Visibilidade</p>
+                        <p id="visibility-val" class="text-base md:text-lg font-bold">-- km</p>
+                    </div>
+                    <div class="bg-slate-custom/50 border border-slate-custom p-4 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
+                        <span class="material-symbols-outlined text-primary mb-2">speed</span>
+                        <p class="text-slate-400 text-[10px] md:text-xs font-medium uppercase mb-1">Pressão</p>
+                        <p id="pressure-val" class="text-base md:text-lg font-bold">-- hPa</p>
+                    </div>
+                    <div class="bg-slate-custom/50 border border-slate-custom p-4 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
+                        <span class="material-symbols-outlined text-blue-500 mb-2">cloud</span>
+                        <p class="text-slate-400 text-[10px] md:text-xs font-medium uppercase mb-1">Nebulosidade</p>
+                        <p id="clouds-val" class="text-base md:text-lg font-bold">-- %</p>
+                    </div>
+                    <div class="bg-slate-custom/50 border border-slate-custom p-4 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
+                        <span class="material-symbols-outlined text-blue-300 mb-2">water_drop</span>
+                        <p class="text-slate-400 text-[10px] md:text-xs font-medium uppercase mb-1">Chuva (1h)</p>
+                        <p id="precip-val" class="text-base md:text-lg font-bold">-- mm</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div class="lg:col-span-1 bg-slate-custom/50 border border-slate-custom rounded-xl p-4 space-y-2 relative z-10">
+                    <h4 class="font-bold mb-4 text-sm uppercase text-slate-400 tracking-wider">Camadas do Mapa</h4>
+                    
+                    <button onclick="changeMapLayer('rain')" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-primary/20 transition-colors text-slate-300 hover:text-primary layer-btn active" data-layer="rain">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-xl">rainy</span>
+                            <span class="text-sm font-semibold">Precipitação / Radar</span>
+                        </div>
+                        <span class="material-symbols-outlined text-sm layer-icon">radio_button_checked</span>
+                    </button>
+
+                    <button onclick="changeMapLayer('wind')" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-primary/20 transition-colors text-slate-300 hover:text-primary layer-btn" data-layer="wind">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-xl">airwave</span>
+                            <span class="text-sm font-medium">Vento</span>
+                        </div>
+                        <span class="material-symbols-outlined text-sm layer-icon">radio_button_unchecked</span>
+                    </button>
+
+                    <button onclick="changeMapLayer('rh')" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-primary/20 transition-colors text-slate-300 hover:text-primary layer-btn" data-layer="rh">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-xl">humidity_percentage</span>
+                            <span class="text-sm font-medium">Umidade</span>
+                        </div>
+                        <span class="material-symbols-outlined text-sm layer-icon">radio_button_unchecked</span>
+                    </button>
+                    
+                    <button onclick="changeMapLayer('temp')" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-primary/20 transition-colors text-slate-300 hover:text-primary layer-btn" data-layer="temp">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-xl">device_thermostat</span>
+                            <span class="text-sm font-medium">Temperatura</span>
+                        </div>
+                        <span class="material-symbols-outlined text-sm layer-icon">radio_button_unchecked</span>
+                    </button>
+                </div>
+
+                <div class="lg:col-span-3 h-[300px] md:h-[450px] bg-slate-custom rounded-xl border border-slate-custom relative overflow-hidden group">
+                    <iframe id="windy-iframe" width="100%" height="100%" frameborder="0" style="border:0;" src=""></iframe>
+                </div>
+            </section>
+
+            <section>
+                <div class="flex items-center justify-between mb-4 md:mb-6">
+                    <h3 class="text-lg md:text-xl font-bold">Previsão para 5 dias</h3>
+                </div>
+                <div id="forecast-container" class="flex overflow-x-auto lg:grid lg:grid-cols-5 gap-3 md:gap-4 pb-4 md:pb-0 snap-x snap-mandatory hide-scrollbar">
+                    </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<script>
+    const API_KEY = "fcbf06d821bafe6ee7dc2a0782dfa840";
+    let currentLat = -14.7733; 
+    let currentLon = -54.0531;
+    let currentLayer = "rain"; 
+    let tempChartInstance = null; 
+
+    const owmIcons = {
+        '01d': { icon: 'light_mode', color: 'text-yellow-400' },
+        '01n': { icon: 'clear_night', color: 'text-slate-300' },
+        '02d': { icon: 'partly_cloudy_day', color: 'text-yellow-400' },
+        '02n': { icon: 'partly_cloudy_night', color: 'text-slate-400' },
+        '03d': { icon: 'cloud', color: 'text-slate-400' },
+        '03n': { icon: 'cloud', color: 'text-slate-400' },
+        '04d': { icon: 'cloud', color: 'text-slate-500' },
+        '04n': { icon: 'cloud', color: 'text-slate-500' },
+        '09d': { icon: 'rainy', color: 'text-blue-400' },
+        '09n': { icon: 'rainy', color: 'text-blue-400' },
+        '10d': { icon: 'rainy_light', color: 'text-blue-300' },
+        '10n': { icon: 'rainy_light', color: 'text-blue-300' },
+        '11d': { icon: 'thunderstorm', color: 'text-purple-500' },
+        '11n': { icon: 'thunderstorm', color: 'text-purple-500' },
+        '13d': { icon: 'weather_snowy', color: 'text-white' },
+        '13n': { icon: 'weather_snowy', color: 'text-white' },
+        '50d': { icon: 'foggy', color: 'text-slate-300' },
+        '50n': { icon: 'foggy', color: 'text-slate-300' }
+    };
+
+    function updateWindyMap() {
+        const iframe = document.getElementById('windy-iframe');
+        iframe.src = `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km/h&zoom=8&overlay=${currentLayer}&product=ecmwf&level=surface&lat=${currentLat}&lon=${currentLon}&detailLat=${currentLat}&detailLon=${currentLon}&marker=true`;
+    }
+
+    function changeMapLayer(layer) {
+        currentLayer = layer;
+        updateWindyMap();
+
+        document.querySelectorAll('.layer-btn').forEach(btn => {
+            const icon = btn.querySelector('.layer-icon');
+            if (btn.dataset.layer === layer) {
+                btn.classList.add('bg-primary/20', 'text-primary');
+                btn.classList.remove('text-slate-300');
+                icon.innerText = 'radio_button_checked';
+            } else {
+                btn.classList.remove('bg-primary/20', 'text-primary');
+                btn.classList.add('text-slate-300');
+                icon.innerText = 'radio_button_unchecked';
+            }
+        });
+    }
+
+    async function getWeatherData(cidadePesquisada) {
+        try {
+            const queryLimpa = cidadePesquisada.replace(/\s*-\s*[a-zA-Z]{2}$/, ''); 
+            const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(queryLimpa)},BR&limit=1&appid=${API_KEY}`);
+            const geoData = await geoRes.json();
+
+            if (!geoData || geoData.length === 0) {
+                alert(`Não foi possível localizar a cidade "${cidadePesquisada}".`);
+                return;
+            }
+
+            currentLat = geoData[0].lat;
+            currentLon = geoData[0].lon;
+            const nomeCidadeExato = geoData[0].local_names && geoData[0].local_names.pt ? geoData[0].local_names.pt : geoData[0].name;
+
+            const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${currentLat}&lon=${currentLon}&appid=${API_KEY}&units=metric&lang=pt_br`);
+            const currentData = await weatherRes.json();
+
+            const forecastRes = await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${currentLat}&lon=${currentLon}&appid=${API_KEY}&units=metric&lang=pt_br`);
+            const forecastData = await forecastRes.json();
+
+            updateUI(nomeCidadeExato, currentData, forecastData);
+            updateWindyMap();
+
+        } catch (error) {
+            console.error("Erro ao buscar dados:", error);
+        }
+    }
+
+    function updateUI(nomeExato, current, forecast) {
+        const iconData = owmIcons[current.weather[0].icon] || owmIcons['01d'];
+
+        document.getElementById('city-name').innerText = `${nomeExato}, ${current.sys.country}`;
+        document.getElementById('current-temp').innerText = Math.round(current.main.temp) + '°';
+        document.getElementById('weather-desc').innerText = current.weather[0].description;
+        document.getElementById('weather-details').innerText = `Sensação térmica de ${Math.round(current.main.feels_like)}° • Máx: ${Math.round(current.main.temp_max)}° Mín: ${Math.round(current.main.temp_min)}°`;
+        
+        const mainIcon = document.getElementById('main-icon');
+        mainIcon.innerText = iconData.icon;
+        mainIcon.className = `material-symbols-outlined text-[100px] md:text-[120px] drop-shadow-[0_0_15px_rgba(250,204,21,0.2)] ${iconData.color}`;
+
+        document.getElementById('wind-val').innerText = `${Math.round(current.wind.speed * 3.6)} km/h`;
+        document.getElementById('humidity-val').innerText = `${current.main.humidity}%`;
+        document.getElementById('visibility-val').innerText = `${(current.visibility / 1000).toFixed(1)} km`;
+        document.getElementById('pressure-val').innerText = `${current.main.pressure} hPa`;
+        document.getElementById('clouds-val').innerText = `${current.clouds.all}%`;
+        document.getElementById('precip-val').innerText = current.rain ? `${current.rain['1h'] || 0} mm` : '0 mm';
+
+        // PREVISÃO 5 DIAS
+        const forecastContainer = document.getElementById('forecast-container');
+        forecastContainer.innerHTML = ''; 
+        const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        
+        const dailyForecasts = forecast.list.filter(item => item.dt_txt.includes("12:00:00"));
+
+        dailyForecasts.forEach((dayData, index) => {
+            const dataData = new Date(dayData.dt_txt);
+            const nomeDia = index === 0 ? "Amanhã" : diasSemana[dataData.getDay()];
+            
+            let iconCode = dayData.weather[0].icon;
+            if(iconCode.endsWith('n')) iconCode = iconCode.replace('n', 'd');
+            const diaIcon = owmIcons[iconCode] || owmIcons['01d']; 
+
+            // Alterado para incluir largura mínima fixa (min-w-[140px]) no mobile para funcionar o carrossel perfeitamente
+            forecastContainer.innerHTML += `
+                <div class="min-w-[130px] md:min-w-0 snap-center shrink-0 bg-slate-custom/30 border border-slate-custom hover:bg-primary/5 hover:border-primary/40 p-4 md:p-6 rounded-xl text-center transition-all cursor-default shadow-sm">
+                    <p class="text-slate-400 font-medium text-xs md:text-sm mb-3">${nomeDia}</p>
+                    <span class="material-symbols-outlined text-3xl ${diaIcon.color} mb-3 block">${diaIcon.icon}</span>
+                    <div class="flex justify-center gap-2 md:gap-3 text-sm md:text-base">
+                        <span class="font-bold">${Math.round(dayData.main.temp_max)}°</span>
+                        <span class="text-slate-500 font-bold">${Math.round(dayData.main.temp_min)}°</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        // ATUALIZAÇÃO DO GRÁFICO (CHART.JS)
+        const proximas24h = forecast.list.slice(0, 8);
+        const labelsGrafico = proximas24h.map(item => {
+            const dataObj = new Date(item.dt_txt);
+            return dataObj.getHours().toString().padStart(2, '0') + ':00';
+        });
+        const tempsGrafico = proximas24h.map(item => Math.round(item.main.temp));
+
+        const ctx = document.getElementById('tempChart').getContext('2d');
+        
+        if (tempChartInstance) {
+            tempChartInstance.destroy();
+        }
+
+        tempChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labelsGrafico,
+                datasets: [{
+                    data: tempsGrafico,
+                    borderColor: '#25aff4',
+                    backgroundColor: 'rgba(37, 175, 244, 0.15)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#25aff4',
+                    pointBorderColor: '#101c22',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0.4 
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        displayColors: false,
+                        backgroundColor: '#1a2a33',
+                        titleFont: { family: 'Inter' },
+                        bodyFont: { family: 'Inter', size: 14, weight: 'bold' },
+                        callbacks: { label: (context) => context.raw + '°C' }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false, drawBorder: false },
+                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 } }
+                    },
+                    y: {
+                        display: false, 
+                        min: Math.min(...tempsGrafico) - 3,
+                        max: Math.max(...tempsGrafico) + 3
+                    }
+                }
+            }
+        });
+    }
+
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter' && this.value.trim() !== '') {
+            getWeatherData(this.value.trim());
+            this.blur();
+        }
+    });
+
+    searchInput.addEventListener('input', function(e) {
+        const listId = this.getAttribute('list');
+        const options = document.getElementById(listId).options;
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === this.value) {
+                getWeatherData(this.value);
+                this.blur();
+                break;
+            }
+        }
+    });
+
+    window.onload = () => getWeatherData("Paranatinga");
+</script>
+</body>
+</html>
